@@ -38,7 +38,7 @@ public class ClientTest : MonoBehaviour
         Send(message);
     }
 
-    async void Send(string message)
+    async void Send(string message) //This code send the message from the client to the server
     {
         if (stream == null) return;
         byte[] data = Encoding.UTF8.GetBytes(message);

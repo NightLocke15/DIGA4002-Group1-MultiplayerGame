@@ -49,10 +49,10 @@ public class ServerTest : MonoBehaviour
         stream.BeginRead(buffer, 0, buffer.Length, ar2 =>
         {
             int bytesRead = stream.EndRead(ar2);
-            if (bytesRead > 0)
+            if (bytesRead > 0) //This is where the message is received
             {
                 string msg = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-                text.text = $"Received: {msg}";
+                text.text = $"Received: {msg}"; //I think here the data can then be converted and set as variables to use
                 Debug.Log($"Received: {msg}");
             }
         }, null);
