@@ -2,44 +2,19 @@ using UnityEngine;
 
 public class KartController : MonoBehaviour
 {
-    public float accelForce = 20f;
-    public float steerSpeed = 90f;
-    public Transform camFollow;
+    public float rotateSpeed = 120f;
+    float yawInput;
 
-    float steer;
-    float throttle;
-    float brake;
-
-    Rigidbody rb;
-
-    void Awake()
+    public void SetYawInput(float v)
     {
-        rb = GetComponent<Rigidbody>();
-        rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+        yawInput = Mathf.Clamp(v, -1f, 1f);
     }
 
-    public void SetInput(float steerInput, float throttleInput, float brakeInput)
+    void Update()
     {
-        steer = Mathf.Clamp(steerInput, -1f, 1f);
-        throttle = Mathf.Clamp01(throttleInput);
-        brake = Mathf.Clamp01(brakeInput);
-    }
-
-    void FixedUpdate()
-    {
-        float speed = rb.linearVelocity.magnitude;
-
-        float turn = steer * steerSpeed * Mathf.Deg2Rad;
-        Vector3 fwd = transform.forward;
-
-        if (speed > 0.1f)
+        if (Mathf.Abs(yawInput) > 0.0001f)
         {
-            Quaternion turnRot = Quaternion.Euler(0f, steer * steerSpeed * Time.fixedDeltaTime, 0f);
-            rb.MoveRotation(rb.rotation * turnRot);
+            transform.Rotate(0f, yawInput * rotateSpeed * Time.deltaTime, 0f, Space.World);
         }
-
-        Vector3 force = transform.forward * (throttle - brake) * accelForce;
-        rb.AddForce(force, ForceMode.Acceleration);
     }
-
 }
