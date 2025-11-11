@@ -13,7 +13,8 @@ public class ClientController : MonoBehaviour
     public int serverPort = 7777;
 
     public TMP_InputField ipField;
-    public TMP_Text statusText;
+    public TMP_Text statusText;    
+    public TMP_Text playerLabel;  
 
     public GameObject connectPanel;
     public GameObject controlPanel;
@@ -37,6 +38,7 @@ public class ClientController : MonoBehaviour
 
         if (ipField) ipField.text = serverIP;
         if (controlPanel) controlPanel.SetActive(false);
+        if (playerLabel) playerLabel.text = "";
     }
 
     public void Connect()
@@ -57,6 +59,7 @@ public class ClientController : MonoBehaviour
             StartCoroutine(SendLoop());
 
             if (statusText) statusText.text = "Connecting";
+            if (playerLabel) playerLabel.text = "";
             if (connectPanel) connectPanel.SetActive(false);
             if (controlPanel) controlPanel.SetActive(true);
         }
@@ -83,7 +86,8 @@ public class ClientController : MonoBehaviour
                     if (int.TryParse(parts[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out int pid))
                     {
                         playerId = pid;
-                        if (statusText) statusText.text = $"Assigned P{playerId}";
+                        if (statusText) statusText.text = "Assigned";
+                        if (playerLabel) playerLabel.text = playerId == 1 ? "Player 1" : "Player 2";
                         break;
                     }
                 }
@@ -95,6 +99,7 @@ public class ClientController : MonoBehaviour
         {
             playerId = 1;
             if (statusText) statusText.text = "No assign, default P1";
+            if (playerLabel) playerLabel.text = "Player 1";
         }
     }
 
