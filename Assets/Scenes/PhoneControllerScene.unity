@@ -1784,7 +1784,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 21ac546d7db2be34ab99cd878f50284c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  serverIP: 192.168.101.126
+  serverIP: x
   serverPort: 8080
   ipField: {fileID: 384422708}
   statusText: {fileID: 1273746459}
@@ -1792,12 +1792,6 @@ MonoBehaviour:
   controlPanel: {fileID: 1580237210}
   leftButton: {fileID: 1793401173}
   rightButton: {fileID: 763432257}
-  axis: 1
-  invert: 0
-  rightEnter: 0.25
-  leftEnter: -0.25
-  neutralExit: 0.15
-  smooth: 0.2
 --- !u!1 &1580237210
 GameObject:
   m_ObjectHideFlags: 0
