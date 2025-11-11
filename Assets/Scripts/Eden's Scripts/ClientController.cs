@@ -14,7 +14,8 @@ public class ClientController : MonoBehaviour
 
     public TMP_InputField ipField;
     public TMP_Text statusText;    
-    public TMP_Text playerLabel;  
+    public GameObject playerOneLabel;
+    public GameObject playerTwoLabel;
 
     public GameObject connectPanel;
     public GameObject controlPanel;
@@ -38,7 +39,8 @@ public class ClientController : MonoBehaviour
 
         if (ipField) ipField.text = serverIP;
         if (controlPanel) controlPanel.SetActive(false);
-        if (playerLabel) playerLabel.text = "";
+        if (playerOneLabel) playerOneLabel.SetActive(false);
+        if (playerTwoLabel) playerTwoLabel.SetActive(false);
     }
 
     public void Connect()
@@ -59,7 +61,8 @@ public class ClientController : MonoBehaviour
             StartCoroutine(SendLoop());
 
             if (statusText) statusText.text = "Connecting";
-            if (playerLabel) playerLabel.text = "";
+            if (playerOneLabel) playerOneLabel.SetActive(false);
+            if (playerTwoLabel) playerTwoLabel.SetActive(false);
             if (connectPanel) connectPanel.SetActive(false);
             if (controlPanel) controlPanel.SetActive(true);
         }
@@ -87,7 +90,14 @@ public class ClientController : MonoBehaviour
                     {
                         playerId = pid;
                         if (statusText) statusText.text = "Assigned";
-                        if (playerLabel) playerLabel.text = playerId == 1 ? "Player 1" : "Player 2";
+                        if (playerId == 1)
+                        {
+                            playerOneLabel.SetActive(true);
+                        }
+                        else if (playerId == 2) 
+                        {
+                            playerTwoLabel.SetActive(true);
+                        }
                         break;
                     }
                 }
@@ -99,7 +109,7 @@ public class ClientController : MonoBehaviour
         {
             playerId = 1;
             if (statusText) statusText.text = "No assign, default P1";
-            if (playerLabel) playerLabel.text = "Player 1";
+            if (playerOneLabel) playerOneLabel.SetActive(true);
         }
     }
 
