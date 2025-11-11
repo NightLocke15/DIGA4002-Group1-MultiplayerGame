@@ -6,7 +6,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.UI;  
+using UnityEngine.UI;
 using TMPro;
 
 public class NetworkHost : MonoBehaviour
@@ -23,46 +23,39 @@ public class NetworkHost : MonoBehaviour
     public Camera camP2;
 
     [Header("Panels")]
-    public GameObject startPanel;   
+    public GameObject startPanel;
     public GameObject waitingPanel;
-    public GameObject gamePanel;    
+    public GameObject gamePanel;
 
     [Header("Start UI")]
-    public TMP_InputField ipInput;   
-    public Button enterButton;      
+    public TMP_InputField ipInput;
+    public Button enterButton;
 
     [Header("Lobby")]
-    [SerializeField] private int expectedPlayers = 2; 
+    [SerializeField] private int expectedPlayers = 2;
 
     public TMP_Text poseText;
     public TMP_Text accelText;
     public TMP_Text gyroText;
     public TMP_Text pedalText;
 
-    [SerializeField] private float smooth = 0.10f;
-    [SerializeField] private float axRightEnter = 0.40f;
-    [SerializeField] private float axRightExit = 0.30f;
-    [SerializeField] private float axLeftEnter = -0.40f;
-    [SerializeField] private float axLeftExit = -0.30f;
-    [SerializeField] private float axNeutralAbs = 0.20f;
+    [SerializeField] private float axRightEnter = 0.30f;
+    [SerializeField] private float axLeftEnter = -0.30f;
 
     UdpClient udp;
     bool hosting = false;
 
     readonly Dictionary<string, int> addrToId = new Dictionary<string, int>();
-    readonly string[] idToAddr = new string[3];       
+    readonly string[] idToAddr = new string[3];
     readonly HashSet<int> connectedIds = new HashSet<int>();
 
     bool gotFirstPacket = false;
     float lastPacketTime = -999f;
-    const float packetTimeout = 1.0f;
+    const float packetTimeout = 5.0f;
 
     string lastAccelStr = "ax 0.00 ay 0.00 az 0.00 gz 0.00";
     bool gyroOk = false;
     string lastPose = "N";
-    float axSmooth = 0f, azSmooth = 0f;
-    char stepSideP1 = 'N'; float lastStepTimeP1 = 0f;
-    char stepSideP2 = 'N'; float lastStepTimeP2 = 0f;
     float pedalMsgTimer = 0f;
     const float pedalMsgHold = 0.6f;
 
@@ -124,6 +117,11 @@ public class NetworkHost : MonoBehaviour
             connectedIds.Clear();
             if (poseText) poseText.text = "NEUTRAL";
             if (gyroText) gyroText.text = "GYRO WAITING";
+            if (waitingPanel && gamePanel)
+            {
+                waitingPanel.SetActive(true);
+                gamePanel.SetActive(false);
+            }
         }
 
         if (gyroText) gyroText.text = gyroOk ? "GYRO WORKS" : "GYRO WAITING";
@@ -156,7 +154,12 @@ public class NetworkHost : MonoBehaviour
 
             if (msg.StartsWith("HELLO"))
             {
-                EnsureAssignmentFor(key, r.RemoteEndPoint);
+                int pid = EnsureAssignmentFor(key, r.RemoteEndPoint);
+                if (pid != 0 && !connectedIds.Contains(pid))
+                {
+                    connectedIds.Add(pid);
+                    Debug.Log($"Connected count {connectedIds.Count} of {expectedPlayers}");
+                }
                 CheckAdvanceToGame();
                 continue;
             }
@@ -164,16 +167,16 @@ public class NetworkHost : MonoBehaviour
             var parts = msg.Split(',');
             if (parts.Length < 7) continue;
 
-            int pid = GetOrAssignIdFor(key, r.RemoteEndPoint);
-
-            if (pid != 0 && !connectedIds.Contains(pid))
+            int pid2 = GetOrAssignIdFor(key, r.RemoteEndPoint);
+            if (pid2 != 0 && !connectedIds.Contains(pid2))
             {
-                connectedIds.Add(pid);
+                connectedIds.Add(pid2);
+                Debug.Log($"Connected count {connectedIds.Count} of {expectedPlayers}");
                 CheckAdvanceToGame();
             }
 
             if (float.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out float yawBtn))
-                ApplyYaw(pid, yawBtn);
+                ApplyYaw(pid2, yawBtn);
 
             if (parts.Length >= 6 &&
                 float.TryParse(parts[2], NumberStyles.Float, CultureInfo.InvariantCulture, out float ax) &&
@@ -183,15 +186,12 @@ public class NetworkHost : MonoBehaviour
             {
                 lastAccelStr = $"ax {ax:F2} ay {ay:F2} az {az:F2} gz {gz:F2}";
 
-                axSmooth = Mathf.Lerp(axSmooth, ax, smooth);
-                azSmooth = Mathf.Lerp(azSmooth, az, smooth);
-
-                string newPose = DetectPose(axSmooth, azSmooth, lastPose);
+                string newPose = DetectPose(ax, az, lastPose);
                 if (newPose != lastPose)
                 {
                     if (newPose == "L" || newPose == "R")
                     {
-                        OnPedalStep(pid, newPose[0]);
+                        OnPedalStep(pid2, newPose[0]);
                     }
                     lastPose = newPose;
                 }
@@ -260,29 +260,8 @@ public class NetworkHost : MonoBehaviour
 
     string DetectPose(float ax, float az, string current)
     {
-        bool enterRight = ax >= axRightEnter;
-        bool enterLeft = ax <= axLeftEnter;
-
-        bool exitRight = ax <= axRightExit;
-        bool exitLeft = ax >= axLeftExit;
-
-        bool isNeutral = Mathf.Abs(ax) <= axNeutralAbs;
-
-        if (current == "R")
-        {
-            if (exitRight) current = "N";
-        }
-        else if (current == "L")
-        {
-            if (exitLeft) current = "N";
-        }
-        else
-        {
-            if (enterRight) current = "R";
-            else if (enterLeft) current = "L";
-            else if (isNeutral) current = "N";
-        }
-
+        if (ax >= axRightEnter) return "R";
+        if (ax <= axLeftEnter) return "L";
         return current;
     }
 
@@ -292,25 +271,21 @@ public class NetworkHost : MonoBehaviour
 
         if (pid == 1 && mover1 != null)
         {
-            if ((stepSideP1 == 'L' && side == 'R') || (stepSideP1 == 'R' && side == 'L'))
+            if ((lastPose == "L" && side == 'R') || (lastPose == "R" && side == 'L'))
             {
-                float dt = Mathf.Max(0.0001f, now - lastStepTimeP1);
+                float dt = Mathf.Max(0.0001f, now - lastPacketTime);
                 float dv = mover1.ApplyPedalPush(dt);
                 FlashPedal($"Push {dv:F2}");
             }
-            stepSideP1 = side;
-            lastStepTimeP1 = now;
         }
         else if (pid == 2 && mover2 != null)
         {
-            if ((stepSideP2 == 'L' && side == 'R') || (stepSideP2 == 'R' && side == 'L'))
+            if ((lastPose == "L" && side == 'R') || (lastPose == "R" && side == 'L'))
             {
-                float dt = Mathf.Max(0.0001f, now - lastStepTimeP2);
+                float dt = Mathf.Max(0.0001f, now - lastPacketTime);
                 float dv = mover2.ApplyPedalPush(dt);
                 FlashPedal($"Push {dv:F2}");
             }
-            stepSideP2 = side;
-            lastStepTimeP2 = now;
         }
     }
 

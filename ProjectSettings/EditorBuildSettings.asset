@@ -8,7 +8,7 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Scenes/NetworkTest.unity
     guid: 15854ad2dbd1aeb4c8ec163a730f2d81
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/PhoneControllerScene.unity
     guid: fb05c6139e9656f479012c788ed6b686
   - enabled: 1
