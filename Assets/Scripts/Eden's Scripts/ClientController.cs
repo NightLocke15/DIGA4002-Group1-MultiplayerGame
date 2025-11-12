@@ -2,10 +2,10 @@ using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using UnityEngine;
-using TMPro;
 using System.Collections;
 using System.Globalization;
+using UnityEngine;
+using TMPro;
 
 public class ClientController : MonoBehaviour
 {
@@ -13,8 +13,10 @@ public class ClientController : MonoBehaviour
     public int serverPort = 7777;
 
     public TMP_InputField ipField;
-    public TMP_Text statusText;     // optional
-    public TMP_Text playerLabel;    // shows Player 1 or Player 2
+    public TMP_Text statusText;
+    public TMP_Text playerLabel;
+    public GameObject playerOneLabel;
+    public GameObject playerTwoLabel;
 
     public GameObject connectPanel;
     public GameObject controlPanel;
@@ -43,6 +45,8 @@ public class ClientController : MonoBehaviour
         if (ipField) ipField.text = serverIP;
         if (controlPanel) controlPanel.SetActive(false);
         if (playerLabel) playerLabel.text = "";
+        if (playerOneLabel) playerOneLabel.SetActive(false);
+        if (playerTwoLabel) playerTwoLabel.SetActive(false);
     }
 
     public void Connect()
@@ -64,6 +68,8 @@ public class ClientController : MonoBehaviour
 
             if (statusText) statusText.text = "Connecting";
             if (playerLabel) playerLabel.text = "";
+            if (playerOneLabel) playerOneLabel.SetActive(false);
+            if (playerTwoLabel) playerTwoLabel.SetActive(false);
             if (connectPanel) connectPanel.SetActive(false);
             if (controlPanel) controlPanel.SetActive(true);
         }
@@ -91,7 +97,7 @@ public class ClientController : MonoBehaviour
                     {
                         playerId = pid;
                         if (statusText) statusText.text = "Assigned";
-                        if (playerLabel) playerLabel.text = playerId == 1 ? "Player 1" : "Player 2";
+                        ShowPlayerLabel(playerId);
                         break;
                     }
                 }
@@ -103,8 +109,15 @@ public class ClientController : MonoBehaviour
         {
             playerId = 1;
             if (statusText) statusText.text = "No assign, default P1";
-            if (playerLabel) playerLabel.text = "Player 1";
+            ShowPlayerLabel(playerId);
         }
+    }
+
+    void ShowPlayerLabel(int pid)
+    {
+        if (playerLabel) playerLabel.text = pid == 1 ? "Player 1" : "Player 2";
+        if (playerOneLabel) playerOneLabel.SetActive(pid == 1);
+        if (playerTwoLabel) playerTwoLabel.SetActive(pid == 2);
     }
 
     IEnumerator SendLoop()
@@ -140,7 +153,7 @@ public class ClientController : MonoBehaviour
             byte[] bytes = Encoding.UTF8.GetBytes(msg);
             try { udp.Send(bytes, bytes.Length, serverEP); } catch { }
 
-            yield return null;   // send every frame
+            yield return null;
         }
     }
 
