@@ -2,10 +2,10 @@ using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using UnityEngine;
-using TMPro;
 using System.Collections;
 using System.Globalization;
+using UnityEngine;
+using TMPro;
 
 public class ClientController : MonoBehaviour
 {
@@ -24,7 +24,7 @@ public class ClientController : MonoBehaviour
 
     UdpClient udp;
     IPEndPoint serverEP;
-    int playerId = 0;  
+    int playerId = 0;
     bool running;
 
     void Start()
@@ -35,7 +35,11 @@ public class ClientController : MonoBehaviour
         Screen.autorotateToPortrait = false;
         Screen.autorotateToPortraitUpsideDown = false;
 
+        Application.targetFrameRate = 120;
+        QualitySettings.vSyncCount = 0;
+
         Input.gyro.enabled = true;
+        Input.gyro.updateInterval = 1f / 120f;
 
         if (ipField) ipField.text = serverIP;
         if (controlPanel) controlPanel.SetActive(false);
@@ -113,10 +117,15 @@ public class ClientController : MonoBehaviour
         }
     }
 
+    void ShowPlayerLabel(int pid)
+    {
+        //if (playerLabel) playerLabel.text = pid == 1 ? "Player 1" : "Player 2";
+        if (playerOneLabel) playerOneLabel.SetActive(pid == 1);
+        if (playerTwoLabel) playerTwoLabel.SetActive(pid == 2);
+    }
+
     IEnumerator SendLoop()
     {
-        var wait = new WaitForSeconds(1f / 30f);
-
         Vector3 lastA = Vector3.zero;
         float lastGz = 0f;
         bool gyroOk = false;
@@ -148,7 +157,7 @@ public class ClientController : MonoBehaviour
             byte[] bytes = Encoding.UTF8.GetBytes(msg);
             try { udp.Send(bytes, bytes.Length, serverEP); } catch { }
 
-            yield return wait;
+            yield return null;
         }
     }
 
