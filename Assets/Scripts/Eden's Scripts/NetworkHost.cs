@@ -39,8 +39,11 @@ public class NetworkHost : MonoBehaviour
     public TMP_Text gyroText;
     public TMP_Text pedalText;
 
+    [Header("Tilt thresholds")]
     [SerializeField] private float axRightEnter = 0.30f;
     [SerializeField] private float axLeftEnter = -0.30f;
+
+    public bool controlsLocked = false;
 
     UdpClient udp;
     bool hosting = false;
@@ -267,6 +270,8 @@ public class NetworkHost : MonoBehaviour
 
     void OnPedalStep(int pid, char side)
     {
+        if (controlsLocked) return;
+
         float now = Time.realtimeSinceStartup;
 
         if (pid == 1 && mover1 != null)
@@ -274,8 +279,8 @@ public class NetworkHost : MonoBehaviour
             if ((lastPose == "L" && side == 'R') || (lastPose == "R" && side == 'L'))
             {
                 float dt = Mathf.Max(0.0001f, now - lastPacketTime);
-                float dv = mover1.ApplyPedalPush(dt);
-                FlashPedal($"Push {dv:F2}");
+                mover1.ApplyPedalPush(dt);
+                FlashPedal("Push");
             }
         }
         else if (pid == 2 && mover2 != null)
@@ -283,8 +288,8 @@ public class NetworkHost : MonoBehaviour
             if ((lastPose == "L" && side == 'R') || (lastPose == "R" && side == 'L'))
             {
                 float dt = Mathf.Max(0.0001f, now - lastPacketTime);
-                float dv = mover2.ApplyPedalPush(dt);
-                FlashPedal($"Push {dv:F2}");
+                mover2.ApplyPedalPush(dt);
+                FlashPedal("Push");
             }
         }
     }
@@ -298,6 +303,8 @@ public class NetworkHost : MonoBehaviour
 
     void ApplyYaw(int playerId, float yaw)
     {
+        if (controlsLocked) yaw = 0f;
+
         if (playerId == 1 && player1) player1.SetYawInput(yaw);
         else if (playerId == 2 && player2) player2.SetYawInput(yaw);
     }
