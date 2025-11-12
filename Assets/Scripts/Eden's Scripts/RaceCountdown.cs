@@ -6,50 +6,56 @@ public class RaceCountdown : MonoBehaviour
     public TMP_Text countdownText;
     public int seconds = 5;
 
+    NetworkHost host;
     Rigidbody rb1;
     Rigidbody rb2;
-    NetworkHost host;
-    bool locking;
-    bool started;
+
+    float remaining;
+    bool activeLock;
 
     public void StartCountdown(NetworkHost hostRef)
     {
-        if (started) return;
-        started = true;
-
         host = hostRef;
+        remaining = Mathf.Max(1, seconds);
+        host.controlsLocked = true;
+        activeLock = true;
 
         rb1 = host.player1 ? host.player1.GetComponentInChildren<Rigidbody>() : null;
         rb2 = host.player2 ? host.player2.GetComponentInChildren<Rigidbody>() : null;
 
-        if (countdownText) countdownText.gameObject.SetActive(true);
-
-        host.controlsLocked = true;
-        locking = true;
-        StartCoroutine(DoCountdown());
-        Debug.Log("Countdown started");
+        if (countdownText)
+        {
+            countdownText.gameObject.SetActive(true);
+            countdownText.text = Mathf.CeilToInt(remaining).ToString();
+        }
     }
 
-    System.Collections.IEnumerator DoCountdown()
+    public void ResetCountdown()
     {
-        int s = Mathf.Max(1, seconds);
-        while (s > 0)
-        {
-            if (countdownText) countdownText.text = s.ToString();
-            yield return new WaitForSecondsRealtime(1f);
-            s--;
-        }
-
+        activeLock = false;
+        remaining = 0f;
         if (countdownText) countdownText.gameObject.SetActive(false);
+    }
 
-        locking = false;
-        host.controlsLocked = false;
-        Debug.Log("Countdown finished");
+    void Update()
+    {
+        if (!activeLock) return;
+
+        remaining -= Time.unscaledDeltaTime;
+        int display = Mathf.Clamp(Mathf.CeilToInt(remaining), 0, 99);
+        if (countdownText) countdownText.text = display.ToString();
+
+        if (remaining <= 0f)
+        {
+            activeLock = false;
+            host.controlsLocked = false;
+            if (countdownText) countdownText.gameObject.SetActive(false);
+        }
     }
 
     void FixedUpdate()
     {
-        if (!locking) return;
+        if (!activeLock) return;
 
         if (rb1)
         {
@@ -61,12 +67,5 @@ public class RaceCountdown : MonoBehaviour
             rb2.linearVelocity = Vector3.zero;
             rb2.angularVelocity = Vector3.zero;
         }
-    }
-
-    public void ResetCountdown()
-    {
-        started = false;
-        locking = false;
-        if (countdownText) countdownText.gameObject.SetActive(false);
     }
 }

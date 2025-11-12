@@ -12,6 +12,8 @@ using TMPro;
 public class NetworkHost : MonoBehaviour
 {
     public RaceCountdown countdown;
+    bool gameActive = false;
+    bool countdownRunning = false;
 
     [Header("Network")]
     public int listenPort = 7777;
@@ -34,16 +36,25 @@ public class NetworkHost : MonoBehaviour
     public Button enterButton;
 
     [Header("Lobby")]
-    [SerializeField] private int expectedPlayers = 1;
+    [SerializeField] private int expectedPlayers = 2;
 
+    [Header("HUD")]
     public TMP_Text poseText;
     public TMP_Text accelText;
     public TMP_Text gyroText;
     public TMP_Text pedalText;
+    public TMP_Text player1Text;
+    public TMP_Text player2Text;
 
     [Header("Tilt thresholds")]
     [SerializeField] private float axRightEnter = 0.30f;
     [SerializeField] private float axLeftEnter = -0.30f;
+
+    [Header("Effects")]
+    public float defaultMaxSpeed = 4f;
+    public float boostMaxSpeed = 6f;
+    public float powerDuration = 5f;
+    public float setbackDuration = 5f;
 
     public bool controlsLocked = false;
 
@@ -64,6 +75,11 @@ public class NetworkHost : MonoBehaviour
     float pedalMsgTimer = 0f;
     const float pedalMsgHold = 0.6f;
 
+    float boostEnd1 = 0f;
+    float boostEnd2 = 0f;
+    float swapEnd1 = 0f;
+    float swapEnd2 = 0f;
+
     void Start()
     {
         if (camP1) camP1.rect = new Rect(0f, 0f, 0.5f, 1f);
@@ -79,8 +95,13 @@ public class NetworkHost : MonoBehaviour
         if (gyroText) gyroText.text = "GYRO WAITING";
         if (accelText) accelText.text = lastAccelStr;
         if (pedalText) pedalText.text = "";
+        if (player1Text) player1Text.text = "";
+        if (player2Text) player2Text.text = "";
 
         if (enterButton) enterButton.onClick.AddListener(OnPressEnterHost);
+
+        if (mover1) mover1.maxForwardSpeed = defaultMaxSpeed;
+        if (mover2) mover2.maxForwardSpeed = defaultMaxSpeed;
     }
 
     public void OnPressEnterHost()
@@ -143,6 +164,53 @@ public class NetworkHost : MonoBehaviour
         {
             pedalMsgTimer -= Time.deltaTime;
             if (pedalMsgTimer <= 0f) pedalText.text = "";
+        }
+
+        float now = Time.time;
+
+        if (mover1) mover1.maxForwardSpeed = now <= boostEnd1 ? boostMaxSpeed : defaultMaxSpeed;
+        if (mover2) mover2.maxForwardSpeed = now <= boostEnd2 ? boostMaxSpeed : defaultMaxSpeed;
+
+        if (player1Text)
+        {
+            float remBoost = boostEnd1 - now;
+            float remSwap = swapEnd1 - now;
+
+            if (remBoost > 0f)
+            {
+                int s = Mathf.CeilToInt(remBoost);
+                player1Text.text = $"Koeksister: pedal boost for {s} seconds";
+            }
+            else if (remSwap > 0f)
+            {
+                int s = Mathf.CeilToInt(remSwap);
+                player1Text.text = $"Brandy: steering buttons swapped for {s} seconds";
+            }
+            else
+            {
+                player1Text.text = "";
+            }
+        }
+
+        if (player2Text)
+        {
+            float remBoost = boostEnd2 - now;
+            float remSwap = swapEnd2 - now;
+
+            if (remBoost > 0f)
+            {
+                int s = Mathf.CeilToInt(remBoost);
+                player2Text.text = $"Koeksister: pedal boost for {s} seconds";
+            }
+            else if (remSwap > 0f)
+            {
+                int s = Mathf.CeilToInt(remSwap);
+                player2Text.text = $"Brandy: steering buttons swapped for {s} seconds";
+            }
+            else
+            {
+                player2Text.text = "";
+            }
         }
     }
 
@@ -215,37 +283,11 @@ public class NetworkHost : MonoBehaviour
 
         if (connectedIds.Count >= expectedPlayers)
         {
-            waitingPanel.SetActive(false);
-            gamePanel.SetActive(true);
-
-            Time.timeScale = 1f;
-
-            if (countdown)
-            {
-                countdown.StartCountdown(this);
-            }
-            else
-            {
-                var found = gamePanel.GetComponentInChildren<RaceCountdown>(true);
-                if (found)
-                {
-                    countdown = found;
-                    countdown.StartCountdown(this);
-                }
-                else
-                {
-                    Debug.LogWarning("No RaceCountdown found under gamePanel");
-                }
-            }
-
-            Debug.Log("Game panel ON");
+            SwitchToGame();
         }
         else
         {
-            waitingPanel.SetActive(true);
-            gamePanel.SetActive(false);
-
-            if (countdown) countdown.ResetCountdown();
+            SwitchToWaiting();
         }
     }
 
@@ -293,6 +335,43 @@ public class NetworkHost : MonoBehaviour
         return current;
     }
 
+    void SwitchToWaiting()
+    {
+        gameActive = false;
+        countdownRunning = false;
+        controlsLocked = true;
+
+        if (gamePanel && gamePanel.activeSelf) gamePanel.SetActive(false);
+        if (waitingPanel && !waitingPanel.activeSelf) waitingPanel.SetActive(true);
+
+        if (countdown) countdown.ResetCountdown();
+    }
+
+    void SwitchToGame()
+    {
+        if (waitingPanel && waitingPanel.activeSelf) waitingPanel.SetActive(false);
+        if (gamePanel && !gamePanel.activeSelf) gamePanel.SetActive(true);
+
+        Time.timeScale = 1f;
+
+        if (!countdownRunning)
+        {
+            var cd = countdown ? countdown : gamePanel.GetComponentInChildren<RaceCountdown>(true);
+            if (cd)
+            {
+                countdown = cd;
+                controlsLocked = true;
+                countdown.StartCountdown(this);
+                countdownRunning = true;
+                gameActive = true;
+            }
+            else
+            {
+                Debug.LogWarning("RaceCountdown not found under gamePanel");
+            }
+        }
+    }
+
     void OnPedalStep(int pid, char side)
     {
         if (controlsLocked) return;
@@ -326,12 +405,46 @@ public class NetworkHost : MonoBehaviour
         pedalMsgTimer = pedalMsgHold;
     }
 
-    void ApplyYaw(int playerId, float yaw)
+    void ApplyYaw(int pid, float yaw)
     {
         if (controlsLocked) yaw = 0f;
 
-        if (playerId == 1 && player1) player1.SetYawInput(yaw);
-        else if (playerId == 2 && player2) player2.SetYawInput(yaw);
+        float now = Time.time;
+        if (pid == 1 && now <= swapEnd1) yaw = -yaw;
+        if (pid == 2 && now <= swapEnd2) yaw = -yaw;
+
+        if (pid == 1 && player1) player1.SetYawInput(yaw);
+        else if (pid == 2 && player2) player2.SetYawInput(yaw);
+    }
+
+    public void ApplyPowerUp(int pid)
+    {
+        float until = Time.time + Mathf.Max(0.1f, powerDuration);
+        if (pid == 1)
+        {
+            boostEnd1 = until;
+            if (player1Text) player1Text.text = $"Koeksister: pedal boost for {powerDuration:F0} seconds";
+        }
+        else if (pid == 2)
+        {
+            boostEnd2 = until;
+            if (player2Text) player2Text.text = $"Koeksister: pedal boost for {powerDuration:F0} seconds";
+        }
+    }
+
+    public void ApplySetBack(int pid)
+    {
+        float until = Time.time + Mathf.Max(0.1f, setbackDuration);
+        if (pid == 1)
+        {
+            swapEnd1 = until;
+            if (player1Text) player1Text.text = $"Brandy: steering buttons swapped for {setbackDuration:F0} seconds";
+        }
+        else if (pid == 2)
+        {
+            swapEnd2 = until;
+            if (player2Text) player2Text.text = $"Brandy: steering buttons swapped for {setbackDuration:F0} seconds";
+        }
     }
 
     string GetLocalIPv4()
