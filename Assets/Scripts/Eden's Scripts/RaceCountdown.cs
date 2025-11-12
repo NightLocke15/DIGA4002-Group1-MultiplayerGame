@@ -9,53 +9,37 @@ public class RaceCountdown : MonoBehaviour
     NetworkHost host;
     Rigidbody rb1;
     Rigidbody rb2;
-
     float remaining;
-    bool activeLock;
+    bool active;
 
-    public void StartCountdown(NetworkHost hostRef)
+    public void StartCountdown(NetworkHost h)
     {
-        host = hostRef;
+        host = h;
         remaining = Mathf.Max(1, seconds);
+        active = true;
+
+        if (countdownText) { countdownText.gameObject.SetActive(true); countdownText.text = Mathf.CeilToInt(remaining).ToString(); }
+
+        if (host && host.player1) rb1 = host.player1.GetComponent<Rigidbody>();
+        if (host && host.player2) rb2 = host.player2.GetComponent<Rigidbody>();
+
         host.controlsLocked = true;
-        activeLock = true;
-
-        rb1 = host.player1 ? host.player1.GetComponentInChildren<Rigidbody>() : null;
-        rb2 = host.player2 ? host.player2.GetComponentInChildren<Rigidbody>() : null;
-
-        if (countdownText)
-        {
-            countdownText.gameObject.SetActive(true);
-            countdownText.text = Mathf.CeilToInt(remaining).ToString();
-        }
+        Time.timeScale = 1f;
     }
 
     public void ResetCountdown()
     {
-        activeLock = false;
-        remaining = 0f;
+        active = false;
         if (countdownText) countdownText.gameObject.SetActive(false);
     }
 
     void Update()
     {
-        if (!activeLock) return;
+        if (!active) return;
 
         remaining -= Time.unscaledDeltaTime;
         int display = Mathf.Clamp(Mathf.CeilToInt(remaining), 0, 99);
         if (countdownText) countdownText.text = display.ToString();
-
-        if (remaining <= 0f)
-        {
-            activeLock = false;
-            host.controlsLocked = false;
-            if (countdownText) countdownText.gameObject.SetActive(false);
-        }
-    }
-
-    void FixedUpdate()
-    {
-        if (!activeLock) return;
 
         if (rb1)
         {
@@ -66,6 +50,14 @@ public class RaceCountdown : MonoBehaviour
         {
             rb2.linearVelocity = Vector3.zero;
             rb2.angularVelocity = Vector3.zero;
+        }
+
+        if (remaining <= 0f)
+        {
+            if (countdownText) countdownText.gameObject.SetActive(false);
+            active = false;
+
+            if (host) host.UnlockControls();
         }
     }
 }
