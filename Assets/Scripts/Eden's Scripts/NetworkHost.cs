@@ -11,6 +11,8 @@ using TMPro;
 
 public class NetworkHost : MonoBehaviour
 {
+    public RaceCountdown countdown;
+
     [Header("Network")]
     public int listenPort = 7777;
 
@@ -32,7 +34,7 @@ public class NetworkHost : MonoBehaviour
     public Button enterButton;
 
     [Header("Lobby")]
-    [SerializeField] private int expectedPlayers = 2;
+    [SerializeField] private int expectedPlayers = 1;
 
     public TMP_Text poseText;
     public TMP_Text accelText;
@@ -215,12 +217,35 @@ public class NetworkHost : MonoBehaviour
         {
             waitingPanel.SetActive(false);
             gamePanel.SetActive(true);
-            Debug.Log("Game ready");
+
+            Time.timeScale = 1f;
+
+            if (countdown)
+            {
+                countdown.StartCountdown(this);
+            }
+            else
+            {
+                var found = gamePanel.GetComponentInChildren<RaceCountdown>(true);
+                if (found)
+                {
+                    countdown = found;
+                    countdown.StartCountdown(this);
+                }
+                else
+                {
+                    Debug.LogWarning("No RaceCountdown found under gamePanel");
+                }
+            }
+
+            Debug.Log("Game panel ON");
         }
         else
         {
             waitingPanel.SetActive(true);
             gamePanel.SetActive(false);
+
+            if (countdown) countdown.ResetCountdown();
         }
     }
 

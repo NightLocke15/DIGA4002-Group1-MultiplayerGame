@@ -4109,12 +4109,12 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 2114643369}
   - {fileID: 156104871}
   - {fileID: 1367398401}
   - {fileID: 1322024306}
   - {fileID: 693329219}
   - {fileID: 1474256298}
+  - {fileID: 2114643369}
   m_Father: {fileID: 1815044073}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
@@ -4150,12 +4150,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 810570867}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -1208, y: -540, z: 1.82}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -4, y: 0, z: 1.82}
   m_LocalScale: {x: 21.28, y: 1, z: 1.5952}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1433879631}
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!65 &810570869
 BoxCollider:
@@ -4657,6 +4657,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 676b490a0114e7a4980c43a2f9e29802, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  countdown: {fileID: 2139219499}
   listenPort: 8080
   player1: {fileID: 873562011}
   player2: {fileID: 792543208}
@@ -5368,7 +5369,6 @@ Transform:
   - {fileID: 511950209}
   - {fileID: 2116895869}
   - {fileID: 455909850}
-  - {fileID: 810570868}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1474256297
@@ -13805,7 +13805,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5b8464539bd1f6742aa0d6f34c8cda58, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  host: {fileID: 987733769}
   countdownText: {fileID: 2114643370}
   seconds: 5
 --- !u!4 &2139219500
@@ -13839,4 +13838,5 @@ SceneRoots:
   - {fileID: 1815044073}
   - {fileID: 1959628797}
   - {fileID: 1433879631}
+  - {fileID: 810570868}
   - {fileID: 2139219500}

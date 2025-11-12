@@ -119,7 +119,7 @@ public class ClientController : MonoBehaviour
 
     void ShowPlayerLabel(int pid)
     {
-        if (playerLabel) playerLabel.text = pid == 1 ? "Player 1" : "Player 2";
+        //if (playerLabel) playerLabel.text = pid == 1 ? "Player 1" : "Player 2";
         if (playerOneLabel) playerOneLabel.SetActive(pid == 1);
         if (playerTwoLabel) playerTwoLabel.SetActive(pid == 2);
     }
