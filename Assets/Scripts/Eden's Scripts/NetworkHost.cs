@@ -61,6 +61,8 @@ public class NetworkHost : MonoBehaviour
     public AudioSource sfxSource;
     public AudioClip bgMusic;
     public AudioClip winClip;
+    public AudioClip boostClip;
+    public AudioClip setbackClip;
 
     UdpClient udp;
     bool hosting = false;
@@ -503,6 +505,7 @@ public class NetworkHost : MonoBehaviour
             if (player2Text) player2Text.text = $"Koeksister: pedal boost for {powerDuration:F0} seconds";
         }
         NotifyPhoneSound(pid, "BOOST");
+        if (sfxSource && boostClip) sfxSource.PlayOneShot(boostClip);
         return true;
     }
 
@@ -523,6 +526,8 @@ public class NetworkHost : MonoBehaviour
             if (player2Text) player2Text.text = $"Brandy: steering buttons swapped for {setbackDuration:F0} seconds";
         }
         NotifyPhoneSound(pid, "SETBACK");
+        if (sfxSource && setbackClip) sfxSource.PlayOneShot(setbackClip);
+
         return true;
     }
 

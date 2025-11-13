@@ -9595,6 +9595,8 @@ MonoBehaviour:
   sfxSource: {fileID: 1980431540}
   bgMusic: {fileID: 8300000, guid: d777f77a9774c9440a28c29e0d4beec2, type: 3}
   winClip: {fileID: 8300000, guid: d570191dc7cf747428b208abd8a8fce7, type: 3}
+  boostClip: {fileID: 8300000, guid: 2cb8a30427a903243a997db927e1f8ac, type: 3}
+  setbackClip: {fileID: 8300000, guid: b9e9df40760c8c84688d8631961060cf, type: 3}
 --- !u!1 &997368910
 GameObject:
   m_ObjectHideFlags: 0
