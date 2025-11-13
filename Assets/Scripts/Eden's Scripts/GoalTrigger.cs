@@ -5,7 +5,8 @@ public class GoalTrigger : MonoBehaviour
 {
     public NetworkHost host;
     public GameObject winPanel;
-    public TMP_Text winnerText;
+    public GameObject playerOneWin;
+    public GameObject playerTwoWin;
     public GameObject[] toDisableOnWin;
 
     bool finished;
@@ -40,7 +41,16 @@ public class GoalTrigger : MonoBehaviour
         }
 
         if (winPanel) winPanel.SetActive(true);
-        if (winnerText) winnerText.text = who + " wins";
+        if (who == "Player 1")
+        {
+            playerOneWin.SetActive(true);
+            playerTwoWin.SetActive(false);
+        }
+        else
+        {
+            playerOneWin.SetActive(false);
+            playerTwoWin.SetActive(true);
+        }
 
         if (host) host.enabled = false;
         Time.timeScale = 0f;

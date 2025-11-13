@@ -40,10 +40,10 @@ public class NetworkHost : MonoBehaviour
     public TMP_Text player1Text;
     public TMP_Text player2Text;
 
-    public TMP_Text p1LeftText;
-    public TMP_Text p1RightText;
-    public TMP_Text p2LeftText;
-    public TMP_Text p2RightText;
+    public Image p1LeftText;
+    public Image p1RightText;
+    public Image p2LeftText;
+    public Image p2RightText;
 
     [SerializeField] private float axRightEnter = 0.30f;
     [SerializeField] private float axLeftEnter = -0.30f;
@@ -419,7 +419,7 @@ public class NetworkHost : MonoBehaviour
     void SetInstrColors()
     {
         Color waitingColor = Color.gray;
-        Color doneColor = Color.green;
+        Color doneColor = Color.white;
 
         if (p1LeftText) p1LeftText.color = (tutP1 == TutState.NeedLeft) ? waitingColor : doneColor;
         if (p1RightText) p1RightText.color = (tutP1 == TutState.Ready) ? doneColor : (tutP1 == TutState.NeedRight ? waitingColor : doneColor);
