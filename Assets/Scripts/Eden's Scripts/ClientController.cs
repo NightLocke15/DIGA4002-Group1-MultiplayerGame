@@ -13,7 +13,7 @@ public class ClientController : MonoBehaviour
     public int serverPort = 7777;
 
     public TMP_InputField ipField;
-    public TMP_Text statusText;    
+    public TMP_Text statusText;
     public GameObject playerOneLabel;
     public GameObject playerTwoLabel;
 
@@ -21,6 +21,10 @@ public class ClientController : MonoBehaviour
     public GameObject controlPanel;
     public DirectionButtons leftButton;
     public DirectionButtons rightButton;
+
+    public AudioSource audioSource;
+    public AudioClip boostSound;
+    public AudioClip setbackSound;
 
     UdpClient udp;
     IPEndPoint serverEP;
@@ -94,16 +98,14 @@ public class ClientController : MonoBehaviour
                     {
                         playerId = pid;
                         if (statusText) statusText.text = "Assigned";
-                        if (playerId == 1)
-                        {
-                            playerOneLabel.SetActive(true);
-                        }
-                        else if (playerId == 2) 
-                        {
-                            playerTwoLabel.SetActive(true);
-                        }
+                        ShowPlayerLabel(playerId);
                         break;
                     }
+                }
+                else if (msg.StartsWith("SOUND"))
+                {
+                    string type = msg.Substring(6).Trim();
+                    PlayPhoneSound(type);
                 }
             }
             yield return null;
@@ -113,13 +115,12 @@ public class ClientController : MonoBehaviour
         {
             playerId = 1;
             if (statusText) statusText.text = "No assign, default P1";
-            if (playerOneLabel) playerOneLabel.SetActive(true);
+            ShowPlayerLabel(playerId);
         }
     }
 
     void ShowPlayerLabel(int pid)
     {
-        //if (playerLabel) playerLabel.text = pid == 1 ? "Player 1" : "Player 2";
         if (playerOneLabel) playerOneLabel.SetActive(pid == 1);
         if (playerTwoLabel) playerTwoLabel.SetActive(pid == 2);
     }
@@ -157,8 +158,29 @@ public class ClientController : MonoBehaviour
             byte[] bytes = Encoding.UTF8.GetBytes(msg);
             try { udp.Send(bytes, bytes.Length, serverEP); } catch { }
 
+            while (udp.Available > 0)
+            {
+                IPEndPoint ep = null;
+                byte[] data = udp.Receive(ref ep);
+                string down = Encoding.UTF8.GetString(data);
+                if (down.StartsWith("SOUND"))
+                {
+                    string type = down.Substring(6).Trim();
+                    PlayPhoneSound(type);
+                }
+            }
+
             yield return null;
         }
+    }
+
+    void PlayPhoneSound(string type)
+    {
+        if (!audioSource) return;
+        if (string.Equals(type, "BOOST", StringComparison.OrdinalIgnoreCase) && boostSound)
+            audioSource.PlayOneShot(boostSound);
+        else if (string.Equals(type, "SETBACK", StringComparison.OrdinalIgnoreCase) && setbackSound)
+            audioSource.PlayOneShot(setbackSound);
     }
 
     void OnApplicationQuit()

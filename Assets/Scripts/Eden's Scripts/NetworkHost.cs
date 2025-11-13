@@ -57,11 +57,17 @@ public class NetworkHost : MonoBehaviour
 
     public bool controlsLocked = false;
 
+    public AudioSource musicSource;
+    public AudioSource sfxSource;
+    public AudioClip bgMusic;
+    public AudioClip winClip;
+
     UdpClient udp;
     bool hosting = false;
 
     readonly Dictionary<string, int> addrToId = new Dictionary<string, int>();
     readonly string[] idToAddr = new string[3];
+    readonly IPEndPoint[] idToEndPoint = new IPEndPoint[3];
     readonly HashSet<int> connectedIds = new HashSet<int>();
 
     bool gotFirstPacket = false;
@@ -111,6 +117,13 @@ public class NetworkHost : MonoBehaviour
 
         if (mover1) mover1.maxForwardSpeed = defaultMaxSpeed;
         if (mover2) mover2.maxForwardSpeed = defaultMaxSpeed;
+
+        if (musicSource && bgMusic)
+        {
+            musicSource.clip = bgMusic;
+            musicSource.loop = true;
+            musicSource.Play();
+        }
 
         ResetInstructionUI();
         controlsLocked = true;
@@ -241,6 +254,7 @@ public class NetworkHost : MonoBehaviour
             if (msg.StartsWith("HELLO"))
             {
                 int pid = EnsureAssignmentFor(key, r.RemoteEndPoint);
+                idToEndPoint[pid] = r.RemoteEndPoint;
                 if (pid != 0 && !connectedIds.Contains(pid)) connectedIds.Add(pid);
                 CheckAdvanceToNextPhase();
                 continue;
@@ -250,6 +264,7 @@ public class NetworkHost : MonoBehaviour
             if (parts.Length < 7) continue;
 
             int pid2 = GetOrAssignIdFor(key, r.RemoteEndPoint);
+            idToEndPoint[pid2] = r.RemoteEndPoint;
             if (pid2 != 0 && !connectedIds.Contains(pid2))
             {
                 connectedIds.Add(pid2);
@@ -487,6 +502,7 @@ public class NetworkHost : MonoBehaviour
             boostEnd2 = until;
             if (player2Text) player2Text.text = $"Koeksister: pedal boost for {powerDuration:F0} seconds";
         }
+        NotifyPhoneSound(pid, "BOOST");
         return true;
     }
 
@@ -506,7 +522,31 @@ public class NetworkHost : MonoBehaviour
             swapEnd2 = until;
             if (player2Text) player2Text.text = $"Brandy: steering buttons swapped for {setbackDuration:F0} seconds";
         }
+        NotifyPhoneSound(pid, "SETBACK");
         return true;
+    }
+
+    public void OnPlayerWin(int pid)
+    {
+        if (sfxSource && winClip) sfxSource.PlayOneShot(winClip);
+    }
+
+    void NotifyPhoneSound(int pid, string type)
+    {
+        var ep = idToEndPoint[pid];
+        if (ep == null) return;
+
+        string msg = "SOUND " + type;
+        byte[] data = Encoding.UTF8.GetBytes(msg);
+
+        try
+        {
+            using (var sendClient = new UdpClient())
+            {
+                sendClient.Send(data, data.Length, ep);
+            }
+        }
+        catch { }
     }
 
     int GetOrAssignIdFor(string key, IPEndPoint ep)
@@ -534,6 +574,7 @@ public class NetworkHost : MonoBehaviour
 
         if (id != 0)
         {
+            idToEndPoint[id] = ep;
             byte[] ack = Encoding.UTF8.GetBytes($"ASSIGN,{id}");
             try { udp.Send(ack, ack.Length, ep); } catch { }
             Debug.Log($"Assigned player {id} to {key}");
